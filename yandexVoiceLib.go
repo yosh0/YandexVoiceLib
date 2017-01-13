@@ -57,8 +57,6 @@ func generateRandomSelection(min, max, c int) []string {
 	for len(r) < c {
 		if max - len(r) == 0 {
 			break
-		} else {
-
 		}
 		v := random(min, max - len(r))
 		for res, _ := range r {
