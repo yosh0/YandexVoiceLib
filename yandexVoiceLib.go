@@ -28,7 +28,7 @@ func Recognize(file string, topic string, key string, lang string) (body []byte)
 	rsp.Header.Set("Content-Type", "audio/x-wav")
 	rq, err := http.DefaultClient.Do(rsp)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 	}
 	defer rq.Body.Close()
 	body, err = ioutil.ReadAll(rq.Body)
@@ -41,7 +41,7 @@ func Tokenize(key string, layers string, text string) (body []byte) {
 	rsp, err := http.NewRequest("GET", url, bytes.NewBufferString(data.Encode()))
 	rq, err := http.DefaultClient.Do(rsp)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 	}
 	defer rq.Body.Close()
 	body, err = ioutil.ReadAll(rq.Body)
