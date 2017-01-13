@@ -14,7 +14,41 @@ import (
 	"math/rand"
 )
 
-func GenerateRandomSelection(min, max, c int) []string {
+func Recognize(file string, topic string, key string, lang string) (body []byte) {
+	tUuid := generateRandomSelection(0, 30, 64)
+	uuid := strings.Join(tUuid, "")
+	uuid = uuid[0:32]
+	f1, err := os.Open(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	payload := io.MultiReader(f1)
+	url := fmt.Sprintf("https://asr.yandex.net/asr_xml?key=%s&uuid=%s&topic=%s&lang=%s", key, uuid, topic, lang)
+	rsp, err := http.NewRequest("POST", url, payload)
+	rsp.Header.Set("Content-Type", "audio/x-wav")
+	rq, err := http.DefaultClient.Do(rsp)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer rq.Body.Close()
+	body, err = ioutil.ReadAll(rq.Body)
+	return body
+}
+
+func Tokenize(key string, layers string, text string) (body []byte) {
+	data := url.Values{}
+	url := fmt.Sprintf("https://vins-markup.voicetech.yandex.net/markup/0.x/?key=%s&layers=%s&text=%s", key, layers, text)
+	rsp, err := http.NewRequest("GET", url, bytes.NewBufferString(data.Encode()))
+	rq, err := http.DefaultClient.Do(rsp)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer rq.Body.Close()
+	body, err = ioutil.ReadAll(rq.Body)
+	return body
+}
+
+func generateRandomSelection(min, max, c int) []string {
 	var r []string
 	if min > max {
 		return r
@@ -39,40 +73,6 @@ func GenerateRandomSelection(min, max, c int) []string {
 	}
 	r = arrayShuffle(r)
 	return r
-}
-
-func Recognize(file string, topic string, key string, lang string) (body []byte) {
-	tUuid := GenerateRandomSelection(0, 30, 64)
-	uuid := strings.Join(tUuid, "")
-	uuid = uuid[0:32]
-	f1, err := os.Open(file)
-	if err != nil {
-		fmt.Println(err)
-	}
-	payload := io.MultiReader(f1)
-	url := fmt.Sprintf("https://asr.yandex.net/asr_xml?key=%s&uuid=%s&topic=%s&lang=%s", key, uuid, topic, lang)
-	rsp, err := http.NewRequest("POST", url, payload)
-	rsp.Header.Set("Content-Type", "audio/x-wav")
-	rq, err := http.DefaultClient.Do(rsp)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	defer rq.Body.Close()
-	body, err = ioutil.ReadAll(rq.Body)
-	return body
-}
-
-func Tokenize(key string, layers string, text string) (body []byte) {
-	data := url.Values{}
-	url := fmt.Sprintf("https://vins-markup.voicetech.yandex.net/markup/0.x/?key=%s&layers=%stext=%s", key, layers, text)
-	rsp, err := http.NewRequest("POST", url, bytes.NewBufferString(data.Encode()))
-	rq, err := http.DefaultClient.Do(rsp)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	defer rq.Body.Close()
-	body, err = ioutil.ReadAll(rq.Body)
-	return body
 }
 
 func arrayShuffle(a []string) []string {
