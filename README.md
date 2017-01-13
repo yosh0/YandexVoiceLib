@@ -1,5 +1,5 @@
 # YandexVoiceLib
-Golang implementation of Yandex Voice Library
+Golang implementation of Yandex Voice Library (speech to text)
 
 ##Example
 ```
