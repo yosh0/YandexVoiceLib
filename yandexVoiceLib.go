@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"time"
-	"bytes"
 	"net/url"
 	"strings"
 	"net/http"
@@ -14,37 +13,89 @@ import (
 	"math/rand"
 )
 
-func Recognize(file string, topic string, key string, lang string) (body []byte) {
+const (
+	RECOGNIZE_SCHEME	= "https"
+	RECOGNIZE_HOST		= "asr.yandex.net"
+	RECOGNIZE_PATH		= "/asr_xml/"
+)
+
+func Recognize(file, topic, key, lang string) (body []byte) {
 	tUuid := generateRandomSelection(0, 30, 64)
 	uuid := strings.Join(tUuid, "")
 	uuid = uuid[0:32]
-	f1, err := os.Open(file)
+	f, err := os.Open(file)
 	if err != nil {
 		fmt.Println(err)
 	}
-	payload := io.MultiReader(f1)
-	url := fmt.Sprintf("https://asr.yandex.net/asr_xml?key=%s&uuid=%s&topic=%s&lang=%s", key, uuid, topic, lang)
-	rsp, err := http.NewRequest("POST", url, payload)
-	rsp.Header.Set("Content-Type", "audio/x-wav")
-	rq, err := http.DefaultClient.Do(rsp)
+	payload := io.MultiReader(f)
+
+	var Url *url.URL
+	Url, err = url.Parse(fmt.Sprintf("%s://%s", RECOGNIZE_SCHEME, RECOGNIZE_HOST))
 	if err != nil {
 		fmt.Println(err)
 	}
-	defer rq.Body.Close()
-	body, err = ioutil.ReadAll(rq.Body)
+	Url.Scheme = RECOGNIZE_SCHEME
+	Url.Host = RECOGNIZE_HOST
+	Url.Path = RECOGNIZE_PATH
+	params := url.Values{}
+	params.Add("key", key)
+	params.Add("uuid", uuid)
+	params.Add("topic", topic)
+	params.Add("lang", lang)
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	request, err := http.NewRequest(http.MethodPost, Url.String(), payload)
+	if err != nil {
+		fmt.Println(err)
+	}
+	request.Header.Set("Content-Type", "audio/x-wav")
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer response.Body.Close()
+	body, err = ioutil.ReadAll(response.Body)
 	return body
 }
 
-func Tokenize(key string, layers string, text string) (body []byte) {
-	data := url.Values{}
-	url := fmt.Sprintf("https://vins-markup.voicetech.yandex.net/markup/0.x/?key=%s&layers=%s&text=%s", key, layers, text)
-	rsp, err := http.NewRequest("GET", url, bytes.NewBufferString(data.Encode()))
-	rq, err := http.DefaultClient.Do(rsp)
+const (
+	TOKENIZE_SCHEME	= "https"
+	TOKENIZE_HOST	= "vins-markup.voicetech.yandex.net"
+	TOKENIZE_PATH	= "/markup/0.x/"
+)
+
+func Tokenize(key, layers, text string) (body []byte) {
+	var Url *url.URL
+	Url, err := url.Parse(fmt.Sprintf("%s://%s", TOKENIZE_SCHEME, TOKENIZE_HOST))
 	if err != nil {
 		fmt.Println(err)
 	}
-	defer rq.Body.Close()
-	body, err = ioutil.ReadAll(rq.Body)
+	Url.Scheme = TOKENIZE_SCHEME
+	Url.Host = TOKENIZE_HOST
+	Url.Path = TOKENIZE_PATH
+	params := url.Values{}
+	params.Add("key", key)
+	params.Add("layers", layers)
+	params.Add("text", text)
+	Url.RawQuery = params.Encode()
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+	request, err := http.NewRequest(http.MethodGet, Url.String(), nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer response.Body.Close()
+	body, err = ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return body
 }
 
