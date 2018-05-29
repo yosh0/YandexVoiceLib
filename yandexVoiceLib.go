@@ -19,20 +19,21 @@ const (
 	RECOGNIZE_PATH		= "/asr_xml"
 )
 
-func Recognize(file, topic, key, lang string) (body []byte) {
+func Recognize(file, topic, key, lang string) ([]byte, error) {
+	var byteArr []byte
 	tUuid := generateRandomSelection(0, 30, 64)
 	uuid := strings.Join(tUuid, "")
 	uuid = uuid[0:32]
 	f, err := os.Open(file)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	payload := io.MultiReader(f)
 
 	var Url *url.URL
 	Url, err = url.Parse(fmt.Sprintf("%s://%s", RECOGNIZE_SCHEME, RECOGNIZE_HOST))
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	Url.Scheme = RECOGNIZE_SCHEME
 	Url.Host = RECOGNIZE_HOST
@@ -48,16 +49,19 @@ func Recognize(file, topic, key, lang string) (body []byte) {
 	}
 	request, err := http.NewRequest(http.MethodPost, Url.String(), payload)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	request.Header.Set("Content-Type", "audio/x-wav")
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	defer response.Body.Close()
-	body, err = ioutil.ReadAll(response.Body)
-	return body
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return byteArr, err
+	}
+	return body, nil
 }
 
 const (
@@ -66,11 +70,12 @@ const (
 	TOKENIZE_PATH	= "/markup/0.x/"
 )
 
-func Tokenize(key, layers, text string) (body []byte) {
+func Tokenize(key, layers, text string) ([]byte, error) {
+	var byteArr []byte
 	var Url *url.URL
 	Url, err := url.Parse(fmt.Sprintf("%s://%s", TOKENIZE_SCHEME, TOKENIZE_HOST))
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	Url.Scheme = TOKENIZE_SCHEME
 	Url.Host = TOKENIZE_HOST
@@ -85,18 +90,18 @@ func Tokenize(key, layers, text string) (body []byte) {
 	}
 	request, err := http.NewRequest(http.MethodGet, Url.String(), nil)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	response, err := client.Do(request)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
 	defer response.Body.Close()
-	body, err = ioutil.ReadAll(response.Body)
+	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(err)
+		return byteArr, err
 	}
-	return body
+	return body, nil
 }
 
 func generateRandomSelection(min, max, c int) []string {
