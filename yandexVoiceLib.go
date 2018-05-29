@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"io/ioutil"
 	"math/rand"
+	"crypto/tls"
 )
 
 const (
@@ -86,6 +87,11 @@ func Tokenize(key, layers, text string) ([]byte, error) {
 	params.Add("text", text)
 	Url.RawQuery = params.Encode()
 	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
 		Timeout: 5 * time.Second,
 	}
 	request, err := http.NewRequest(http.MethodGet, Url.String(), nil)
