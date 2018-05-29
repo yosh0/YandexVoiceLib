@@ -16,7 +16,7 @@ import (
 const (
 	RECOGNIZE_SCHEME	= "https"
 	RECOGNIZE_HOST		= "asr.yandex.net"
-	RECOGNIZE_PATH		= "/asr_xml/"
+	RECOGNIZE_PATH		= "/asr_xml"
 )
 
 func Recognize(file, topic, key, lang string) (body []byte) {
@@ -42,10 +42,10 @@ func Recognize(file, topic, key, lang string) (body []byte) {
 	params.Add("uuid", uuid)
 	params.Add("topic", topic)
 	params.Add("lang", lang)
+	Url.RawQuery = params.Encode()
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
-
 	request, err := http.NewRequest(http.MethodPost, Url.String(), payload)
 	if err != nil {
 		fmt.Println(err)
